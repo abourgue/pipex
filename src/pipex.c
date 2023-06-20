@@ -6,7 +6,7 @@
 /*   By: abourgue <abourgue@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/12 15:39:19 by abourgue          #+#    #+#             */
-/*   Updated: 2023/05/18 13:33:56 by abourgue         ###   ########.fr       */
+/*   Updated: 2023/06/20 14:17:56 by abourgue         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,78 +14,38 @@
 
 // id CHILD_PROCESS = 0
 
-int	check_file(char *path)
+char	*find_path(char **envp)
 {
-	int	res;
-
-	res = 0;
-	if (access(path, F_OK) == -1)
-		return (1);
-	if (access(path, R_OK) != -1)
-		res += 3;
-	if (access(path, W_OK) != -1)
-		res += 2;
-	printf("check_file : %d\n", res);
-	return (res);
+	while (ft_strncmp("PATH", *envp, 4))
+		envp++;
+	return (*envp + 5);
 }
 
-int change_standard(int type, char *path, t_pipex *process)
+int	main(int argc, char **argv, char **envp)
 {
-	if (type == 1)
-	{
-		process->fd_in = open(path, O_RDONLY);
-		if (process->fd_in == -1)
-			return (1);
-		if (dup2(process->fd_in, STDIN_FILENO) == -1)
-			return (2);
-	}
-	else
-	{
-		process->fd_out = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-		if (process->fd_out == -1)
-			return (1);
-		if (dup2(process->fd_in, STDOUT_FILENO) == -1)
-			return (2);
-	}
-	return (0);
-}
+	t_pipex	process;
 
-int	pipex(char **args)
-{
-	t_pipex	process = {.id = -1};
-
-	if (check_file(args[1]) < 3)
-		return (1);
-	if (change_standard(1, args[1], &process) != 0)
-		return (1);
-	if (pipe(process.fd) == -1)
-		return (1);
-	process.id = fork();
-	if (process.id == -1)
-		return (2);
-	if (process.id == 0)
-	{
-		close(process.fd[1]);
-		printf("salut (child_process)\n");
-	}
-	else
-	{
-		printf("salut\n");
-	}
-
-	close(process.fd[0]);
-	close(process.fd[1]);
-	close(process.fd_in);
-	close(process.fd_out);
-	return (0);
-}
-
-int	main(int argc, char **argv)
-{
 	if (argc != 5)
-		return (0);
-	if (pipex(argv) != 0)
-		return (1);
-	printf("COMPILE OK!");
+		return (msg(ERR_INPUT));
+	process.fd[0] = open(argv[1], O_RDONLY);
+	if (process.fd[0] < 0)
+		msg_error(ERR_INFILE);
+	process.fd[1] = open(argv[argc - 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	if (process.fd[1] < 0)
+		msg_error(ERR_OUTFILE);
+	if (pipe(process.tube) == -1)
+		msg_error(ERR_PIPE);
+	process.envp_path = find_path(envp);
+	process.cmd_path = ft_split(process.envp_path, ':');
+	process.pid1 = fork();
+	if (process.pid1 == 0)
+		first_cmd(argv, envp, process);
+	process.pid2 = fork();
+	if (process.pid2 == 0)
+		second_cmd(argv, envp, process);
+	close_pipes(&process);
+	waitpid(process.pid1, NULL, 0);
+	waitpid(process.pid2, NULL, 0);
+	parent_free(&process);
 	return (0);
 }

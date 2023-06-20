@@ -6,7 +6,7 @@
 #    By: abourgue <abourgue@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/05/12 15:32:24 by abourgue          #+#    #+#              #
-#    Updated: 2023/05/18 13:34:32 by abourgue         ###   ########.fr        #
+#    Updated: 2023/05/24 14:22:26 by abourgue         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -15,7 +15,7 @@ NAME = pipex
 SRC_DIR = src/
 
 SRC = \
-	pipex.c
+	pipex.c commands.c free.c error.c
 
 SOURCES = $(addprefix $(SRC_DIR), $(SRC))
 
@@ -23,7 +23,7 @@ OBJS = $(SOURCES:.c=.o)
 
 CC = gcc
 
-CFLAGS = -Wall -Wextra -Werror -fsanitize=address -g3
+CFLAGS = -Wall -Wextra -Werror -fsanitize=address -g
 
 G		= \033[0;90m #gray
 R		= \033[0;91m #red
